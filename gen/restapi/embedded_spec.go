@@ -33,6 +33,13 @@ func init() {
         "parameters": [
           {
             "type": "string",
+            "default": "Bearer {token}",
+            "name": "Authorization",
+            "in": "header",
+            "required": true
+          },
+          {
+            "type": "string",
             "description": "defaults to World if not given",
             "name": "name",
             "in": "query"
@@ -65,6 +72,13 @@ func init() {
         ],
         "operationId": "getGreeting",
         "parameters": [
+          {
+            "type": "string",
+            "default": "Bearer {token}",
+            "name": "Authorization",
+            "in": "header",
+            "required": true
+          },
           {
             "type": "string",
             "description": "defaults to World if not given",

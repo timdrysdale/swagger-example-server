@@ -1,10 +1,62 @@
 # Custom Server Tutorial
 
-# notes
+## notes
 
 with go modules (`go mod init`) the deps are obtained with `go get -g gen/...`
 
-## Original contents From [here](https://github.com/go-swagger/go-swagger/blob/master/docs/tutorial/custom-server.md)
+
+## authorization
+
+Taking the working example with the handler implemented and adding authorisation to the spec goes as follows:
+
+adding authorization requirement to the api parameters
+
+```
+    parameters:
+      - name: Authorization
+        in: header
+        required: true
+        default: Bearer {token}
+        type: string
+	<snip>	
+```
+Then regenerate the code with no manual changes to the custom main.
+
+Trying without an authorization header yields the predictable result
+
+```
+$ http get :3000/hello name==funky
+HTTP/1.1 422 Unprocessable Entity
+Connection: close
+Content-Length: 60
+Content-Type: application/json
+Date: Tue, 22 Dec 2020 16:42:39 GMT
+
+{
+    "code": 602,
+    "message": "Authorization in header is required"
+}
+```
+
+Let's add a header ... 
+```
+$  http get :3000/hello name==funky Authorization:"Bearer XYZ123"
+HTTP/1.1 200 OK
+Connection: close
+Content-Length: 13
+Content-Type: text/plain
+Date: Tue, 22 Dec 2020 16:48:18 GMT
+
+Hello, funky!
+
+```
+
+Obviously this is a rather permissive authorisation scheme, out of the box. 
+
+
+## Below here is the original tutorial README
+
+Original contents from [here](https://github.com/go-swagger/go-swagger/blob/master/docs/tutorial/custom-server.md)
 
 In this tutorial we'll be building up a custom server.
 The core will be generated using a manually written and maintained OpenAPI 2.0 spec.
