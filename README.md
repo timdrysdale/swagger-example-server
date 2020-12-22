@@ -53,6 +53,103 @@ Hello, funky!
 
 Obviously this is a rather permissive authorisation scheme, out of the box. 
 
+Because all we've enforced is that there is a key in the header.
+
+So let's change the spec [like this]( https://shashankvivek-7.medium.com/go-swagger-user-authentication-securing-api-using-jwt-part-2-c80fdc1a020a)
+
+```
+---
+swagger: '2.0'
+info:
+  version: 1.0.0
+  title: Greeting Server
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header  
+paths:
+  /hello:
+    get:
+      produces:
+        - text/plain
+      parameters:
+        - name: name
+          required: false
+          type: string
+          in: query
+          description: defaults to World if not given
+      operationId: getGreeting
+      # note the "security" tag created on the restricted endpoint
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: returns a greeting
+          schema:
+              type: string
+              description: contains the actual greeting as plain text
+
+```
+This gives totally different results!
+
+```
+$ http get :3000/hello name==funky Authorization:""
+HTTP/1.1 401 Unauthorized
+Connection: close
+Content-Length: 64
+Content-Type: application/json
+Date: Tue, 22 Dec 2020 18:42:33 GMT
+
+{
+    "code": 401,
+    "message": "unauthenticated for invalid credentials"
+}
+
+$ http get :3000/hello name==funky Authorization:"Bearer XYZ123"
+HTTP/1.1 501 Not Implemented
+Connection: close
+Content-Length: 123
+Content-Type: application/json
+Date: Tue, 22 Dec 2020 18:42:39 GMT
+
+{
+    "code": 501,
+    "message": "api key auth (Bearer) Authorization from header param [Authorization] has not yet been implemented"
+}
+```
+
+Now we can look for that message and implement the middleware that is needed ....
+```
+$ grep -rnw './' -e 'Authorization from header param'
+./gen/restapi/operations/greeter_api.go:51:			return nil, errors.NotImplemented("api key auth (Bearer) Authorization from header param [Authorization] has not yet been implemented")
+./gen/restapi/configure_greeter.go:43:			return nil, errors.NotImplemented("api key auth (Bearer) Authorization from header param [Authorization] has not yet been implemented")
+```
+
+We copy in the ValidateHeader function, set a trivial secret (jwtsecret), prepare a jwt token with that secret, e.g. 
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJ1c2VyIjoiZnVua3kifQ.RKW_CGxk971o8gxIDtSfJYsRph9uqaERDu04F4UQCfw`
+```
+and now we make a request
+
+```
+$ export token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJ1c2VyIjoiZnVua3kifQ.RKW_CGxk971o8gxIDtSfJYsRph9uqaERDu04F4UQCfw
+
+$ http get :3000/hello name==fabby Authorization:"Bearer ${token}"
+
+HTTP/1.1 200 OK
+Connection: close
+Content-Length: 13
+Content-Type: text/plain
+Date: Tue, 22 Dec 2020 18:56:18 GMT
+
+Hello, fabby!
+```
+
+Yay :-)
+
+
+
 
 ## Below here is the original tutorial README
 

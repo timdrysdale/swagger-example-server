@@ -37,8 +37,20 @@ func configureAPI(api *operations.GreeterAPI) http.Handler {
 
 	api.TxtProducer = runtime.TextProducer()
 
+	// Applies when the "Authorization" header is set
+	if api.BearerAuth == nil {
+		api.BearerAuth = func(token string) (interface{}, error) {
+			return nil, errors.NotImplemented("api key auth (Bearer) Authorization from header param [Authorization] has not yet been implemented")
+		}
+	}
+
+	// Set your custom authorizer if needed. Default one is security.Authorized()
+	// Expected interface runtime.Authorizer
+	//
+	// Example:
+	// api.APIAuthorizer = security.Authorized()
 	if api.GetGreetingHandler == nil {
-		api.GetGreetingHandler = operations.GetGreetingHandlerFunc(func(params operations.GetGreetingParams) middleware.Responder {
+		api.GetGreetingHandler = operations.GetGreetingHandlerFunc(func(params operations.GetGreetingParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation operations.GetGreeting has not yet been implemented")
 		})
 	}

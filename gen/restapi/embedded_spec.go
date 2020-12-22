@@ -26,18 +26,16 @@ func init() {
   "paths": {
     "/hello": {
       "get": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
         "produces": [
           "text/plain"
         ],
         "operationId": "getGreeting",
         "parameters": [
-          {
-            "type": "string",
-            "default": "Bearer {token}",
-            "name": "Authorization",
-            "in": "header",
-            "required": true
-          },
           {
             "type": "string",
             "description": "defaults to World if not given",
@@ -56,6 +54,13 @@ func init() {
         }
       }
     }
+  },
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
   }
 }`))
 	FlatSwaggerJSON = json.RawMessage([]byte(`{
@@ -67,18 +72,16 @@ func init() {
   "paths": {
     "/hello": {
       "get": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
         "produces": [
           "text/plain"
         ],
         "operationId": "getGreeting",
         "parameters": [
-          {
-            "type": "string",
-            "default": "Bearer {token}",
-            "name": "Authorization",
-            "in": "header",
-            "required": true
-          },
           {
             "type": "string",
             "description": "defaults to World if not given",
@@ -96,6 +99,13 @@ func init() {
           }
         }
       }
+    }
+  },
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
     }
   }
 }`))

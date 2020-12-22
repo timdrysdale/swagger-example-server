@@ -12,22 +12,13 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
-	"github.com/go-openapi/validate"
 )
 
 // NewGetGreetingParams creates a new GetGreetingParams object
-// with the default values initialized.
+// no default values defined in spec.
 func NewGetGreetingParams() GetGreetingParams {
 
-	var (
-		// initialize parameters with default values
-
-		authorizationDefault = string("Bearer {token}")
-	)
-
-	return GetGreetingParams{
-		Authorization: authorizationDefault,
-	}
+	return GetGreetingParams{}
 }
 
 // GetGreetingParams contains all the bound params for the get greeting operation
@@ -39,12 +30,6 @@ type GetGreetingParams struct {
 	// HTTP Request Object
 	HTTPRequest *http.Request `json:"-"`
 
-	/*
-	  Required: true
-	  In: header
-	  Default: "Bearer {token}"
-	*/
-	Authorization string
 	/*defaults to World if not given
 	  In: query
 	*/
@@ -62,10 +47,6 @@ func (o *GetGreetingParams) BindRequest(r *http.Request, route *middleware.Match
 
 	qs := runtime.Values(r.URL.Query())
 
-	if err := o.bindAuthorization(r.Header[http.CanonicalHeaderKey("Authorization")], true, route.Formats); err != nil {
-		res = append(res, err)
-	}
-
 	qName, qhkName, _ := qs.GetOK("name")
 	if err := o.bindName(qName, qhkName, route.Formats); err != nil {
 		res = append(res, err)
@@ -74,27 +55,6 @@ func (o *GetGreetingParams) BindRequest(r *http.Request, route *middleware.Match
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-// bindAuthorization binds and validates parameter Authorization from header.
-func (o *GetGreetingParams) bindAuthorization(rawData []string, hasKey bool, formats strfmt.Registry) error {
-	if !hasKey {
-		return errors.Required("Authorization", "header", rawData)
-	}
-	var raw string
-	if len(rawData) > 0 {
-		raw = rawData[len(rawData)-1]
-	}
-
-	// Required: true
-
-	if err := validate.RequiredString("Authorization", "header", raw); err != nil {
-		return err
-	}
-
-	o.Authorization = raw
-
 	return nil
 }
 

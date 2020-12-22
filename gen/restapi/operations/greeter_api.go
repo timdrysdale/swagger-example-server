@@ -42,9 +42,16 @@ func NewGreeterAPI(spec *loads.Document) *GreeterAPI {
 
 		TxtProducer: runtime.TextProducer(),
 
-		GetGreetingHandler: GetGreetingHandlerFunc(func(params GetGreetingParams) middleware.Responder {
+		GetGreetingHandler: GetGreetingHandlerFunc(func(params GetGreetingParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation GetGreeting has not yet been implemented")
 		}),
+
+		// Applies when the "Authorization" header is set
+		BearerAuth: func(token string) (interface{}, error) {
+			return nil, errors.NotImplemented("api key auth (Bearer) Authorization from header param [Authorization] has not yet been implemented")
+		},
+		// default authorizer is authorized meaning no requests are blocked
+		APIAuthorizer: security.Authorized(),
 	}
 }
 
@@ -78,6 +85,13 @@ type GreeterAPI struct {
 	// TxtProducer registers a producer for the following mime types:
 	//   - text/plain
 	TxtProducer runtime.Producer
+
+	// BearerAuth registers a function that takes a token and returns a principal
+	// it performs authentication based on an api key Authorization provided in the header
+	BearerAuth func(string) (interface{}, error)
+
+	// APIAuthorizer provides access control (ACL/RBAC/ABAC) by providing access to the request and authenticated principal
+	APIAuthorizer runtime.Authorizer
 
 	// GetGreetingHandler sets the operation handler for the get greeting operation
 	GetGreetingHandler GetGreetingHandler
@@ -157,6 +171,10 @@ func (o *GreeterAPI) Validate() error {
 		unregistered = append(unregistered, "TxtProducer")
 	}
 
+	if o.BearerAuth == nil {
+		unregistered = append(unregistered, "AuthorizationAuth")
+	}
+
 	if o.GetGreetingHandler == nil {
 		unregistered = append(unregistered, "GetGreetingHandler")
 	}
@@ -175,12 +193,21 @@ func (o *GreeterAPI) ServeErrorFor(operationID string) func(http.ResponseWriter,
 
 // AuthenticatorsFor gets the authenticators for the specified security schemes
 func (o *GreeterAPI) AuthenticatorsFor(schemes map[string]spec.SecurityScheme) map[string]runtime.Authenticator {
-	return nil
+	result := make(map[string]runtime.Authenticator)
+	for name := range schemes {
+		switch name {
+		case "Bearer":
+			scheme := schemes[name]
+			result[name] = o.APIKeyAuthenticator(scheme.Name, scheme.In, o.BearerAuth)
+
+		}
+	}
+	return result
 }
 
 // Authorizer returns the registered authorizer
 func (o *GreeterAPI) Authorizer() runtime.Authorizer {
-	return nil
+	return o.APIAuthorizer
 }
 
 // ConsumersFor gets the consumers for the specified media types.
